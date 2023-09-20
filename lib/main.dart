@@ -52,14 +52,23 @@ class _MyHomePageState extends State<MyHomePage> {
     loadAsset(AssetsConstants.placeholderLogo);
   }
 
+  void loadAsset(String name) async {
+    var data = await rootBundle.load(name);
+    setState(
+      () {
+        imageData = data.buffer.asUint8List();
+      },
+    );
+  }
+
   Future<Uint8List?> applyFilter(Uint8List? imageBytes) async {
     if (imageBytes == null) return null;
 
     final originalImage = img.decodeImage(imageBytes);
     if (originalImage == null) return null;
-    final grayscaleImage = img.sepia(originalImage); // Apply grayscale filter
+    final sepiaImage = img.sepia(originalImage);
 
-    return Uint8List.fromList(img.encodeJpg(grayscaleImage));
+    return Uint8List.fromList(img.encodeJpg(sepiaImage));
   }
 
   Future<void> saveEditedImage(Uint8List editedImageData) async {
@@ -72,15 +81,6 @@ class _MyHomePageState extends State<MyHomePage> {
     } on Exception catch (e) {
       showDialogBox(context, "Image not saved: $e");
     }
-  }
-
-  void loadAsset(String name) async {
-    var data = await rootBundle.load(name);
-    setState(
-      () {
-        imageData = data.buffer.asUint8List();
-      },
-    );
   }
 
   Future getImage(ImageSource source) async {
