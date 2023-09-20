@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:photoeditor/constants/constants.dart';
 import 'package:image/image.dart' as img;
+import 'package:photoeditor/utils/show_dialogue.dart';
 
 void main() {
   runApp(const MyApp());
@@ -21,7 +22,7 @@ class MyApp extends StatelessWidget {
       title: 'Image Editor App',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color.fromARGB(255, 66, 160, 197),
+          seedColor: Colors.blue,
         ),
         useMaterial3: true,
       ),
@@ -51,24 +52,15 @@ class _MyHomePageState extends State<MyHomePage> {
     loadAsset(AssetsConstants.placeholderLogo);
   }
 
-  Future<Uint8List?> applyGrayscaleFilter(Uint8List? imageBytes) async {
+  Future<Uint8List?> applyFilter(Uint8List? imageBytes) async {
     if (imageBytes == null) return null;
 
     final originalImage = img.decodeImage(imageBytes);
     if (originalImage == null) return null;
-
     final grayscaleImage =
         img.grayscale(originalImage); // Apply grayscale filter
 
     return Uint8List.fromList(img.encodeJpg(grayscaleImage));
-  }
-
-  void showFlashError(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-      ),
-    );
   }
 
   Future<void> saveEditedImage(Uint8List editedImageData) async {
@@ -77,9 +69,10 @@ class _MyHomePageState extends State<MyHomePage> {
       final filePath = '${appDocDir!.path}/edited_image.png';
       final file = File(filePath);
       await file.writeAsBytes(editedImageData);
-      showFlashError(context, 'Image saved successfully to $filePath');
-    } catch (e) {
-      showFlashError(context, "$e");
+      //if (mounted)
+      showDialogBox(context, 'Image saved successfully to $filePath');
+    } on Exception catch (e) {
+      showDialogBox(context, "Image not saved: $e");
     }
   }
 
@@ -148,33 +141,34 @@ class _MyHomePageState extends State<MyHomePage> {
                   label: const Text("Image From Camera"),
                 ),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
                       margin: const EdgeInsets.all(10),
                       child: ElevatedButton(
-                        child: const Text("Apply Filter"),
                         onPressed: () async {
                           try {
                             if (flag != 1) {
                               throw Exception("Please select an image first");
                             }
-                            final editedImage =
-                                await applyGrayscaleFilter(imageData);
+                            final editedImage = await applyFilter(imageData);
                             if (editedImage != null) {
-                              setState(() {
-                                imageData = editedImage;
-                              });
+                              setState(
+                                () {
+                                  imageData = editedImage;
+                                },
+                              );
                             }
                           } catch (e) {
-                            showFlashError(context, "$e");
+                            showDialogBox(context, "$e");
                           }
                         },
+                        child: const Text("Apply Filter"),
                       ),
                     ),
                     Container(
                       margin: const EdgeInsets.all(10),
                       child: ElevatedButton(
-                        child: const Text("Image editor"),
                         onPressed: () async {
                           try {
                             if (flag != 1) {
@@ -193,21 +187,25 @@ class _MyHomePageState extends State<MyHomePage> {
                               setState(() {});
                             }
                           } catch (e) {
-                            showFlashError(context, "$e");
+                            showDialogBox(context, "$e");
                           }
                         },
+                        child: const Text("Image editor"),
                       ),
                     ),
                   ],
                 ),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
                       margin: const EdgeInsets.all(10),
                       child: ElevatedButton(
                         style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.all<Color>(
-                                Color.fromARGB(255, 133, 214, 230))),
+                          backgroundColor: MaterialStateProperty.all<Color>(
+                            const Color.fromARGB(255, 133, 214, 230),
+                          ),
+                        ),
                         onPressed: () async {
                           try {
                             if (flag != 1) {
@@ -215,7 +213,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             }
                             await saveEditedImage(imageData!);
                           } catch (e) {
-                            showFlashError(context, "$e");
+                            showDialogBox(context, "$e");
                           }
                         },
                         child: const Text("Save"),
@@ -236,7 +234,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             imageData = originalImageData;
                             setState(() {});
                           } catch (e) {
-                            showFlashError(context, "$e");
+                            showDialogBox(context, "$e");
                           }
                         },
                         child: const Text("Reset all changes"),
